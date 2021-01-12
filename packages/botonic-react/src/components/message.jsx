@@ -94,10 +94,26 @@ export const Message = props => {
     id: props.id || uuidv4(),
   })
 
-  const replies = React.Children.toArray(children).filter(e => e.type === Reply)
-  const buttons = React.Children.toArray(children).filter(
-    e => e.type === Button
-  )
+  const withParentId = (element, parentId) => {
+    return {
+      ...element,
+      ...{
+        props: {
+          ...element.props,
+          ...{ parentId: parentId },
+        },
+      },
+    }
+  }
+
+  const replies = React.Children.toArray(children)
+    .filter(e => e.type === Reply)
+    .map(e => withParentId(e, state.id))
+
+  const buttons = React.Children.toArray(children)
+    .filter(e => e.type === Button)
+    .map(e => withParentId(e, state.id))
+
   let textChildren = React.Children.toArray(children).filter(
     e => ![Button, Reply].includes(e.type)
   )
@@ -135,17 +151,22 @@ export const Message = props => {
         timestamp: props.timestamp || getFormattedTimestamp,
         markdown,
         from,
-        buttons: buttons.map(b => ({
-          payload: b.props.payload,
-          path: b.props.path,
-          url: b.props.url,
-          target: b.props.target,
-          webview: b.props.webview && String(b.props.webview),
-          title: b.props.children,
-        })),
+        buttons: buttons.map(b => {
+          return {
+            parentId: b.props.parentId,
+            enabled: b.props.enabled,
+            payload: b.props.payload,
+            path: b.props.path,
+            url: b.props.url,
+            target: b.props.target,
+            webview: b.props.webview && String(b.props.webview),
+            title: b.props.children,
+          }
+        }),
         delay,
         typing,
         replies: replies.map(r => ({
+          parentId: r.props.parentId,
           payload: r.props.payload,
           path: r.props.path,
           url: r.props.url,
@@ -278,6 +299,7 @@ export const Message = props => {
               </BotMessageImageContainer>
             )}
             <Blob
+              id={state.id}
               className={className}
               bgcolor={getBgColor()}
               color={isFromUser ? COLORS.SOLID_WHITE : COLORS.SOLID_BLACK}

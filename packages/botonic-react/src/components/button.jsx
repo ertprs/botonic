@@ -1,4 +1,5 @@
 import { INPUT, params2queryString } from '@botonic/core'
+import merge from 'lodash.merge'
 import React, { useContext, useState } from 'react'
 import styled from 'styled-components'
 
@@ -34,9 +35,16 @@ export const Button = props => {
     sendPayload,
     sendInput,
     getThemeProperty,
+    updateMessage,
   } = useContext(WebchatContext)
   const [hover, setHover] = useState(false)
+
   const { theme } = webchatState
+  const { parentId } = props
+  const enabled = props.enabled !== undefined ? props.enabled : true
+
+  // TODO: disableButtons can be a generic property settable from webchat/index.js
+  const disableButtons = true
 
   const handleClick = event => {
     event.preventDefault()
@@ -65,6 +73,23 @@ export const Button = props => {
       window.open(props.url, props.target || '_blank')
     }
     if (props.onClick) props.onClick()
+    if (disableButtons) {
+      // TODO: Extract this logic
+      const parent = document.getElementById(parentId)
+      const parentButtons = Array.from(parent.getElementsByTagName('button'))
+      parentButtons.forEach(b => (b.style.display = 'none'))
+      const messageToUpdate = webchatState.messagesJSON.filter(
+        m => m.id == parentId
+      )[0]
+      const updatedButtons = {
+        buttons: messageToUpdate.buttons.map(b => ({
+          ...b,
+          ...{ enabled: false },
+        })),
+      }
+      const updatedMsg = merge(messageToUpdate, updatedButtons)
+      updateMessage(updatedMsg)
+    }
   }
 
   const renderBrowser = () => {
@@ -100,20 +125,22 @@ export const Button = props => {
         )
 
     return (
-      <StyledButton
-        theme={theme}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        onClick={e => handleClick(e)}
-        style={{
-          ...buttonStyle,
-          color: buttonTextColor,
-          backgroundColor: buttonBgColor,
-        }}
-        bottom={props.bottomRadius}
-      >
-        {props.children}
-      </StyledButton>
+      enabled && (
+        <StyledButton
+          theme={theme}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+          onClick={e => handleClick(e)}
+          style={{
+            ...buttonStyle,
+            color: buttonTextColor,
+            backgroundColor: buttonBgColor,
+          }}
+          bottom={props.bottomRadius}
+        >
+          {props.children}
+        </StyledButton>
+      )
     )
   }
 

@@ -169,6 +169,7 @@ function buttonsParse(buttons) {
     const target = props.messenger_extensions ? null : props.target
     const title = props.title
     const webview = props.messenger_extensions ? props.url : props.webview
+    const enabled = props.enabled !== undefined ? props.enabled : true
     return (
       <Button
         key={i}
@@ -176,6 +177,7 @@ function buttonsParse(buttons) {
         url={url}
         target={target}
         webview={webview}
+        enabled={enabled}
       >
         {title}
       </Button>
